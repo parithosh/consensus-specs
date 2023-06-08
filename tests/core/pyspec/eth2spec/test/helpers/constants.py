@@ -17,6 +17,7 @@ SHARDING = SpecForkName('sharding')
 CUSTODY_GAME = SpecForkName('custody_game')
 DAS = SpecForkName('das')
 EIP6110 = SpecForkName('eip6110')
+WHISK = SpecForkName('whisk')
 
 #
 # SpecFork settings
@@ -32,6 +33,7 @@ ALL_PHASES = (
     DENEB,
     # Experimental features
     EIP6110,
+    WHISK,
 )
 # The forks that have light client specs
 LIGHT_CLIENT_TESTING_FORKS = (*[item for item in MAINNET_FORKS if item != PHASE0], DENEB)

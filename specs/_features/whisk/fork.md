@@ -53,20 +53,6 @@ The upgrade occurs after the completion of the inner loop of `process_slots` tha
 This ensures that we drop right into the beginning of the shuffling phase but without `process_whisk_epoch()` triggering for this Whisk run. Hence we handle all the setup ourselves in `upgrade_to_whisk()` below.
 
 ```python
-def whisk_candidate_selection(state: BeaconState, epoch: Epoch) -> None:
-    # TODO
-    # pylint: disable=unused-argument
-    pass
-```
-
-```python
-def whisk_proposer_selection(state: BeaconState, epoch: Epoch) -> None:
-    # TODO
-    # pylint: disable=unused-argument
-    pass
-```
-
-```python
 def upgrade_to_whisk(pre: bellatrix.BeaconState) -> BeaconState:
     # Compute initial unsafe trackers for all validators
     ks = [get_initial_whisk_k(ValidatorIndex(validator_index), 0) for validator_index in range(len(pre.validators))]
@@ -124,12 +110,13 @@ def upgrade_to_whisk(pre: bellatrix.BeaconState) -> BeaconState:
 
     # Do a candidate selection followed by a proposer selection so that we have proposers for the upcoming day
     # Use an old epoch when selecting candidates so that we don't get the same seed as in the next candidate selection
-    whisk_candidate_selection(post, epoch - WHISK_PROPOSER_SELECTION_GAP - 1)
-    whisk_proposer_selection(post, epoch)
+    initial_candidate_gap = WHISK_PROPOSER_SELECTION_GAP + Epoch(1)
+    select_whisk_candidate_trackers(post, max(epoch, initial_candidate_gap) - initial_candidate_gap)
+    select_whisk_proposer_trackers(post, epoch)
 
     # Do a final round of candidate selection.
     # We need it so that we have something to shuffle over the upcoming shuffling phase.
-    whisk_candidate_selection(post, epoch)
+    select_whisk_candidate_trackers(post, epoch)
 
     return post
 ```

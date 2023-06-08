@@ -337,6 +337,11 @@ def get_spec(file_name: Path, preset: Dict[str, str], config: Dict[str, str], pr
     if any('KZG_SETUP' in name for name in constant_vars):
         _update_constant_vars_with_kzg_setups(constant_vars, preset_name)
 
+    if any('CURDLEPROOFS_CRS' in name for name in constant_vars):
+        # TODO: Use actual CRS derived from a fixed string like 'nankokita_no_kakurenbo'
+        crs_len = int(preset_vars['WHISK_VALIDATORS_PER_SHUFFLE'].value) + int(preset_vars['CURDLEPROOFS_N_BLINDERS'].value) + 3
+        constant_vars['CURDLEPROOFS_CRS_G1'] = VariableDefinition(constant_vars['CURDLEPROOFS_CRS_G1'].value, str(ALL_KZG_SETUPS['mainnet'][0][0:crs_len]), "noqa: E501", None)
+
     return SpecObject(
         functions=functions,
         protocols=protocols,
@@ -787,16 +792,26 @@ class WhiskSpecBuilder(CapellaSpecBuilder):
     def imports(cls, preset_name: str):
         return super().imports(preset_name) + f'''
 from eth2spec.capella import {preset_name} as capella
+import curdleproofs 
 '''
 
     @classmethod
     def hardcoded_custom_type_dep_constants(cls, spec_object) -> str:
         # Necessary for custom types `WhiskShuffleProof` and `WhiskTrackerProof`
         constants = {
-            'WHISK_MAX_SHUFFLE_PROOF_SIZE': spec_object.constant_vars['WHISK_MAX_SHUFFLE_PROOF_SIZE'].value,
-            'WHISK_MAX_OPENING_PROOF_SIZE': spec_object.constant_vars['WHISK_MAX_OPENING_PROOF_SIZE'].value,
+            'WHISK_MAX_SHUFFLE_PROOF_SIZE': spec_object.preset_vars['WHISK_MAX_SHUFFLE_PROOF_SIZE'].value,
+            'WHISK_MAX_OPENING_PROOF_SIZE': spec_object.preset_vars['WHISK_MAX_OPENING_PROOF_SIZE'].value,
+            'WHISK_VALIDATORS_PER_SHUFFLE': spec_object.preset_vars['WHISK_VALIDATORS_PER_SHUFFLE'].value,
+            'CURDLEPROOFS_N_BLINDERS': spec_object.preset_vars['CURDLEPROOFS_N_BLINDERS'].value,
         }
         return {**super().hardcoded_custom_type_dep_constants(spec_object), **constants}
+
+    @classmethod
+    def hardcoded_ssz_dep_constants(cls) -> Dict[str, str]:
+        constants = {
+            'EXECUTION_PAYLOAD_INDEX': 'GeneralizedIndex(41)',
+        }
+        return {**super().hardcoded_ssz_dep_constants(), **constants}
 
 
 spec_builders = {
@@ -1280,6 +1295,6 @@ setup(
         "lru-dict==1.2.0",
         MARKO_VERSION,
         "py_arkworks_bls12381==0.3.4",
-        "curdleproofs @ git+https://github.com/nalinbhardwaj/curdleproofs.pie@805d06785b6ff35fde7148762277dd1ae678beeb#egg=curdleproofs&subdirectory=curdleproofs",
+        "curdleproofs @ git+https://github.com/nalinbhardwaj/curdleproofs.pie@5fe661b7183454655ff1e47690bb28e01e66ea66#egg=curdleproofs&subdirectory=curdleproofs",
     ]
 )
