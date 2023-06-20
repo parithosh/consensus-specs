@@ -38,7 +38,7 @@ ALL_PHASES = (
 # The forks that have light client specs
 LIGHT_CLIENT_TESTING_FORKS = (*[item for item in MAINNET_FORKS if item != PHASE0], DENEB)
 # The forks that output to the test vectors.
-TESTGEN_FORKS = (*MAINNET_FORKS, DENEB, EIP6110)
+TESTGEN_FORKS = (*MAINNET_FORKS, DENEB, EIP6110, WHISK)
 
 ALL_FORK_UPGRADES = {
     # pre_fork_name: post_fork_name
