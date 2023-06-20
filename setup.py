@@ -833,7 +833,7 @@ def objects_to_spec(preset_name: str,
     def format_protocol(protocol_name: str, protocol_def: ProtocolDefinition) -> str:
         abstract_functions = ["verify_and_notify_new_payload"]
         for key in protocol_def.functions.keys():
-           if key in abstract_functions:
+            if key in abstract_functions:
                 make_function_abstract(protocol_def, key)
 
         protocol = f"class {protocol_name}(Protocol):"

@@ -374,43 +374,43 @@ def process_whisk(state: BeaconState, body: BeaconBlockBody) -> None:
 
 ```python
 def process_block(state: BeaconState, block: BeaconBlock) -> None:
-    process_block_header(state, block)
-    if is_execution_enabled(state, block.body):
-        process_withdrawals(state, block.body.execution_payload)
-        process_execution_payload(state, block.body.execution_payload, EXECUTION_ENGINE)
-    process_randao(state, block.body)
-    process_eth1_data(state, block.body)
-    process_operations(state, block.body)
-    process_sync_aggregate(state, block.body.sync_aggregate)
-    process_whisk(state, block.body)  # [New in Whisk]
+  process_block_header(state, block)
+  if is_execution_enabled(state, block.body):
+    process_withdrawals(state, block.body.execution_payload)
+    process_execution_payload(state, block.body.execution_payload, EXECUTION_ENGINE)
+  process_randao(state, block.body)
+  process_eth1_data(state, block.body)
+  process_operations(state, block.body)
+  process_sync_aggregate(state, block.body.sync_aggregate)
+  process_whisk(state, block.body)  # [New in Whisk]
 ```
 
 ### Deposits
 
 ```python
 def get_initial_whisk_k(validator_index: ValidatorIndex, counter: int) -> BLSFieldElement:
-    # hash `validator_index || counter`
-    return BLSFieldElement(bytes_to_bls_field(hash(uint_to_bytes(validator_index) + uint_to_bytes(uint64(counter)))))
+  # hash `validator_index || counter`
+  return BLSFieldElement(bytes_to_bls_field(hash(uint_to_bytes(validator_index) + uint_to_bytes(uint64(counter)))))
 ```
 
 ```python
 def get_unique_whisk_k(state: BeaconState, validator_index: ValidatorIndex) -> BLSFieldElement:
-    counter = 0
-    while True:
-        k = get_initial_whisk_k(validator_index, counter)
-        if is_k_commitment_unique(state, BLSG1ScalarMultiply(k, BLS_G1_GENERATOR)):
-            return k  # unique by trial and error
-        counter += 1
+  counter = 0
+  while True:
+    k = get_initial_whisk_k(validator_index, counter)
+    if is_k_commitment_unique(state, BLSG1ScalarMultiply(k, BLS_G1_GENERATOR)):
+      return k  # unique by trial and error
+    counter += 1
 ```
 
 ```python
 def get_k_commitment(k: BLSFieldElement) -> BLSG1Point:
-    return BLSG1ScalarMultiply(k, BLS_G1_GENERATOR)
+  return BLSG1ScalarMultiply(k, BLS_G1_GENERATOR)
 ```
 
 ```python
 def get_initial_tracker(k: BLSFieldElement) -> WhiskTracker:
-    return WhiskTracker(r_G=BLS_G1_GENERATOR, k_r_G=BLSG1ScalarMultiply(k, BLS_G1_GENERATOR))
+  return WhiskTracker(r_G=BLS_G1_GENERATOR, k_r_G=BLSG1ScalarMultiply(k, BLS_G1_GENERATOR))
 ```
 
 ```python
@@ -419,44 +419,44 @@ def apply_deposit(state: BeaconState,
                   withdrawal_credentials: Bytes32,
                   amount: uint64,
                   signature: BLSSignature) -> None:
-    validator_pubkeys = [validator.pubkey for validator in state.validators]
-    if pubkey not in validator_pubkeys:
-        # Verify the deposit signature (proof of possession) which is not checked by the deposit contract
-        deposit_message = DepositMessage(
-            pubkey=pubkey,
-            withdrawal_credentials=withdrawal_credentials,
-            amount=amount,
-        )
-        domain = compute_domain(DOMAIN_DEPOSIT)  # Fork-agnostic domain since deposits are valid across forks
-        signing_root = compute_signing_root(deposit_message, domain)
-        # Initialize validator if the deposit signature is valid
-        if bls.Verify(pubkey, signing_root, signature):
-            index = get_index_for_new_validator(state)
-            validator = get_validator_from_deposit(pubkey, withdrawal_credentials, amount)
-            set_or_append_list(state.validators, index, validator)
-            set_or_append_list(state.balances, index, amount)
-            set_or_append_list(state.previous_epoch_participation, index, ParticipationFlags(0b0000_0000))
-            set_or_append_list(state.current_epoch_participation, index, ParticipationFlags(0b0000_0000))
-            set_or_append_list(state.inactivity_scores, index, uint64(0))
-            # [New in Whisk]
-            k = get_unique_whisk_k(state, ValidatorIndex(len(state.validators) - 1))
-            state.whisk_trackers.append(get_initial_tracker(k))
-            state.whisk_k_commitments.append(get_k_commitment(k))
-    else:
-        # Increase balance by deposit amount
-        index = ValidatorIndex(validator_pubkeys.index(pubkey))
-        increase_balance(state, index, amount)
+  validator_pubkeys = [validator.pubkey for validator in state.validators]
+  if pubkey not in validator_pubkeys:
+    # Verify the deposit signature (proof of possession) which is not checked by the deposit contract
+    deposit_message = DepositMessage(
+      pubkey=pubkey,
+      withdrawal_credentials=withdrawal_credentials,
+      amount=amount,
+    )
+    domain = compute_domain(DOMAIN_DEPOSIT)  # Fork-agnostic domain since deposits are valid across forks
+    signing_root = compute_signing_root(deposit_message, domain)
+    # Initialize validator if the deposit signature is valid
+    if bls.Verify(pubkey, signing_root, signature):
+      index = get_index_for_new_validator(state)
+      validator = get_validator_from_deposit(pubkey, withdrawal_credentials, amount)
+      set_or_append_list(state.validators, index, validator)
+      set_or_append_list(state.balances, index, amount)
+      set_or_append_list(state.previous_epoch_participation, index, ParticipationFlags(0b0000_0000))
+      set_or_append_list(state.current_epoch_participation, index, ParticipationFlags(0b0000_0000))
+      set_or_append_list(state.inactivity_scores, index, uint64(0))
+      # [New in Whisk]
+      k = get_unique_whisk_k(state, ValidatorIndex(len(state.validators) - 1))
+      state.whisk_trackers.append(get_initial_tracker(k))
+      state.whisk_k_commitments.append(get_k_commitment(k))
+  else:
+    # Increase balance by deposit amount
+    index = ValidatorIndex(validator_pubkeys.index(pubkey))
+    increase_balance(state, index, amount)
 ```
 
 ### `get_beacon_proposer_index`
 
 ```python
 def get_beacon_proposer_index(state: BeaconState) -> ValidatorIndex:
-    """
-    Return the beacon proposer index at the current slot.
-    """
-    assert state.latest_block_header.slot == state.slot  # sanity check `process_block_header` has been called
-    return state.latest_block_header.proposer_index
+  """
+  Return the beacon proposer index at the current slot.
+  """
+  assert state.latest_block_header.slot == state.slot  # sanity check `process_block_header` has been called
+  return state.latest_block_header.proposer_index
 ```
 
 ## Testing
@@ -469,14 +469,14 @@ def initialize_beacon_state_from_eth1(eth1_block_hash: Hash32,
                                       deposits: Sequence[Deposit],
                                       execution_payload_header: ExecutionPayloadHeader=ExecutionPayloadHeader()
                                       ) -> BeaconState:
-    state_capella = capella.initialize_beacon_state_from_eth1(
-        eth1_block_hash,
-        eth1_timestamp,
-        deposits,
-        execution_payload_header,
-    )
-    state = upgrade_to_whisk(state_capella)
-    state.fork.previous_version = WHISK_FORK_VERSION
-    state.fork.current_version = WHISK_FORK_VERSION
-    return state
+  state_capella = capella.initialize_beacon_state_from_eth1(
+    eth1_block_hash,
+    eth1_timestamp,
+    deposits,
+    execution_payload_header,
+  )
+  state = upgrade_to_whisk(state_capella)
+  state.fork.previous_version = WHISK_FORK_VERSION
+  state.fork.current_version = WHISK_FORK_VERSION
+  return state
 ```
