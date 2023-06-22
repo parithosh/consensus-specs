@@ -20,8 +20,7 @@ on:
         description: Type of test to run, either mainnet or minimal
         type: string
         required: true
-  schedule:
-    - cron: '0 0 * * *'
+
 
 jobs:
   preclear:
