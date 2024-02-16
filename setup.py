@@ -1,31 +1,21 @@
-from setuptools import setup, find_packages, Command
-from setuptools.command.build_py import build_py
+import ast
+import copy
+import json
+import os
+import string
+from collections import OrderedDict
 from distutils import dir_util
 from distutils.util import convert_path
 from pathlib import Path
-import os
-import string
+from setuptools import setup, find_packages, Command
+from setuptools.command.build_py import build_py
 from typing import Dict, List, Sequence, Optional, Tuple
-import ast
-import subprocess
-import sys
-import copy
-from collections import OrderedDict
-import json
-from functools import reduce
 
 from pysetup.constants import (
     # code names
     PHASE0,
     # misc
     ETH2_SPEC_COMMENT_PREFIX,
-)
-from pysetup.spec_builders import spec_builders
-from pysetup.typing import (
-    BuildTarget,
-    ProtocolDefinition,
-    SpecObject,
-    VariableDefinition,
 )
 from pysetup.helpers import (
     combine_spec_objects,
@@ -34,26 +24,15 @@ from pysetup.helpers import (
     parse_config_vars,
 )
 from pysetup.md_doc_paths import get_md_doc_paths
-
-
-# NOTE: have to programmatically include third-party dependencies in `setup.py`.
-def installPackage(package: str):
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
-
-RUAMEL_YAML_VERSION = "ruamel.yaml==0.17.21"
-try:
-    import ruamel.yaml
-except ImportError:
-    installPackage(RUAMEL_YAML_VERSION)
+from pysetup.spec_builders import spec_builders
+from pysetup.typing import (
+    BuildTarget,
+    ProtocolDefinition,
+    SpecObject,
+    VariableDefinition,
+)
 
 from ruamel.yaml import YAML
-
-MARKO_VERSION = "marko==1.0.2"
-try:
-    import marko
-except ImportError:
-    installPackage(MARKO_VERSION)
-
 from marko.block import Heading, FencedCode, LinkRefDef, BlankLine
 from marko.inline import CodeSpan
 from marko.ext.gfm import gfm
@@ -548,9 +527,9 @@ setup(
         "milagro_bls_binding==1.9.0",
         "remerkleable==0.1.27",
         "trie==2.0.2",
-        RUAMEL_YAML_VERSION,
+        "ruamel.yaml>=0.17.21",
         "lru-dict==1.2.0",
-        MARKO_VERSION,
+        "marko>=1.0.2",
         "py_arkworks_bls12381==0.3.4",
         "curdleproofs==0.1.1",
     ]

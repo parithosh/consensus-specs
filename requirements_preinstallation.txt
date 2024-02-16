@@ -2,3 +2,5 @@ pip>=23.1.2
 wheel>=0.40.0
 setuptools>=68.0.0
 pylint>=3.0.0
+ruamel.yaml==0.17.21
+marko>=1.0.2

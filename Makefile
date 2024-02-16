@@ -3,6 +3,7 @@ SSZ_DIR = ./ssz
 TEST_LIBS_DIR = ./tests/core
 TEST_GENERATORS_DIR = ./tests/generators
 # The working dir during testing
+WORKING_DIR = $(CURDIR)
 PY_SPEC_DIR = $(TEST_LIBS_DIR)/pyspec
 ETH2SPEC_MODULE_DIR = $(PY_SPEC_DIR)/eth2spec
 TEST_REPORT_DIR = $(PY_SPEC_DIR)/test-reports
@@ -103,35 +104,35 @@ generate_tests: $(GENERATOR_TARGETS)
 
 # "make pyspec" to create the pyspec for all phases.
 pyspec:
-	python3 -m venv venv; . venv/bin/activate; python3 setup.py pyspecdev
+	. $(WORKING_DIR)/.venv/bin/activate; python3 setup.py pyspecdev
 
 # check the setup tool requirements
 preinstallation:
-	python3 -m venv venv; . venv/bin/activate; \
-	python3 -m pip install -r requirements_preinstallation.txt
+	uv venv; . $(WORKING_DIR)/.venv/bin/activate; \
+	uv pip install -r requirements_preinstallation.txt
 
 # installs the packages to run pyspec tests
-install_test: preinstallation
-	python3 -m venv venv; . venv/bin/activate; \
-	python3 -m pip install -e .[lint]; python3 -m pip install -e .[test]
+install_test:
+	uv venv; . $(WORKING_DIR)/.venv/bin/activate; \
+	uv pip install -e .[lint]; uv pip install -e .[test]
 
 # Testing against `minimal` or `mainnet` config by default
 test: pyspec
-	. venv/bin/activate; cd $(PY_SPEC_DIR); \
+	uv venv; . $(WORKING_DIR)/.venv/bin/activate; cd $(PY_SPEC_DIR); \
 	python3 -m pytest -n 4 --disable-bls $(COVERAGE_SCOPE) --cov-report="html:$(COV_HTML_OUT)" --cov-branch eth2spec
 
 # Testing against `minimal` or `mainnet` config by default
 find_test: pyspec
-	. venv/bin/activate; cd $(PY_SPEC_DIR); \
+	. $(WORKING_DIR)/.venv/bin/activate; cd $(PY_SPEC_DIR); \
 	python3 -m pytest -k=$(K) --disable-bls $(COVERAGE_SCOPE) --cov-report="html:$(COV_HTML_OUT)" --cov-branch eth2spec
 
 citest: pyspec
 	mkdir -p $(TEST_REPORT_DIR);
 ifdef fork
-	. venv/bin/activate; cd $(PY_SPEC_DIR); \
+	. $(WORKING_DIR)/.venv/bin/activate; cd $(PY_SPEC_DIR); \
 	python3 -m pytest -n $(NUMBER_OF_CORES) --bls-type=fastest --preset=$(TEST_PRESET_TYPE) --fork=$(fork) --junitxml=test-reports/test_results.xml eth2spec
 else
-	. venv/bin/activate; cd $(PY_SPEC_DIR); \
+	. $(WORKING_DIR)/.venv/bin/activate; cd $(PY_SPEC_DIR); \
 	python3 -m pytest -n $(NUMBER_OF_CORES) --bls-type=fastest --preset=$(TEST_PRESET_TYPE) --junitxml=test-reports/test_results.xml eth2spec
 endif
 
@@ -150,14 +151,14 @@ check_toc: $(MARKDOWN_FILES:=.toc)
 codespell:
 	codespell . --skip "./.git,./venv,$(PY_SPEC_DIR)/.mypy_cache" -I .codespell-whitelist
 
-lint: pyspec
-	. venv/bin/activate; cd $(PY_SPEC_DIR); \
+lint:
+	uv venv; . $(WORKING_DIR)/.venv/bin/activate; pyspec; cd $(PY_SPEC_DIR); \
 	flake8  --config $(LINTER_CONFIG_FILE) ./eth2spec \
 	&& python -m pylint --rcfile $(LINTER_CONFIG_FILE) $(PYLINT_SCOPE) \
 	&& python -m mypy --config-file $(LINTER_CONFIG_FILE) $(MYPY_SCOPE)
 
 lint_generators: pyspec
-	. venv/bin/activate; cd $(TEST_GENERATORS_DIR); \
+	. $(WORKING_DIR)/.venv/bin/activate; cd $(TEST_GENERATORS_DIR); \
 	flake8 --config $(LINTER_CONFIG_FILE)
 
 compile_deposit_contract:
@@ -174,10 +175,10 @@ test_deposit_contract:
 	dapp test -v --fuzz-runs 5
 
 install_deposit_contract_web3_tester:
-	cd $(DEPOSIT_CONTRACT_TESTER_DIR); python3 -m venv venv; . venv/bin/activate; python3 -m pip install -r requirements.txt
+	cd $(DEPOSIT_CONTRACT_TESTER_DIR); uv venv; . $(WORKING_DIR)/.venv/bin/activate; uv pip install -r requirements.txt
 
 test_deposit_contract_web3_tests:
-	cd $(DEPOSIT_CONTRACT_TESTER_DIR); . venv/bin/activate; \
+	cd $(DEPOSIT_CONTRACT_TESTER_DIR); . $(WORKING_DIR)/.venv/bin/activate; \
 	python3 -m pytest .
 
 # Runs a generator, identified by param 1
@@ -194,9 +195,9 @@ define run_generator
 	echo "generator $(1) started"; \
 	mkdir -p $(TEST_VECTOR_DIR); \
 	cd $(GENERATOR_DIR)/$(1); \
-	if ! test -d venv; then python3 -m venv venv; fi; \
-	. venv/bin/activate; \
-	pip3 install -r requirements.txt; \
+	if ! test -d venv; then uv venv; fi; \
+	. $(WORKING_DIR)/.venv/bin/activate; \
+	uv pip install -r requirements.txt; \
 	python3 main.py -o $(CURRENT_DIR)/$(TEST_VECTOR_DIR); \
 	echo "generator $(1) finished"
 endef
@@ -210,9 +211,9 @@ $(TEST_VECTOR_DIR)/:
 
 gen_kzg_setups:
 	cd $(SCRIPTS_DIR); \
-	if ! test -d venv; then python3 -m venv venv; fi; \
-	. venv/bin/activate; \
-	pip3 install -r requirements.txt; \
+	if ! test -d venv; then uv venv; fi; \
+	. $(WORKING_DIR)/.venv/bin/activate; \
+	uv pip install -r requirements.txt; \
 	python3 ./gen_kzg_trusted_setups.py --secret=1337 --g1-length=4096 --g2-length=65 --output-dir ${CURRENT_DIR}/presets/minimal/trusted_setups; \
 	python3 ./gen_kzg_trusted_setups.py --secret=1337 --g1-length=4096 --g2-length=65 --output-dir ${CURRENT_DIR}/presets/mainnet/trusted_setups
 
@@ -230,7 +231,7 @@ detect_generator_error_log: $(TEST_VECTOR_DIR)
 
 # For docs reader
 install_docs:
-	python3 -m venv venv; . venv/bin/activate; python3 -m pip install -e .[docs];
+	uv venv; . $(WORKING_DIR)/.venv/bin/activate; uv pip install -e .[docs];
 
 copy_docs:
 	cp -r $(SPEC_DIR) $(DOCS_DIR);
@@ -240,9 +241,9 @@ copy_docs:
 	cp $(CURRENT_DIR)/README.md $(DOCS_DIR)/README.md
 
 build_docs: copy_docs
-	. venv/bin/activate;
+	. $(WORKING_DIR)/.venv/bin/activate;
 	mkdocs build
 
 serve_docs:
-	. venv/bin/activate; 
+	. $(WORKING_DIR)/.venv/bin/activate;
 	mkdocs serve
