@@ -18,7 +18,7 @@ COPY . .
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Inline installation commands
-#RUN make preinstallation && \
-#    make install_test && \
-#    make pyspec
+RUN make preinstallation && \
+    make install_test && \
+    make pyspec
 

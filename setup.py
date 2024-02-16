@@ -3,12 +3,12 @@ import copy
 import json
 import os
 import string
+import subprocess
+import sys
 from collections import OrderedDict
 from distutils import dir_util
 from distutils.util import convert_path
 from pathlib import Path
-from setuptools import setup, find_packages, Command
-from setuptools.command.build_py import build_py
 from typing import Dict, List, Sequence, Optional, Tuple
 
 from pysetup.constants import (
@@ -32,6 +32,29 @@ from pysetup.typing import (
     VariableDefinition,
 )
 
+def installPackage(package: str):
+    subprocess.check_call(['uv', 'pip', 'install', package])
+
+RUAMEL_YAML_VERSION = "ruamel.yaml==0.17.21"
+try:
+    import ruamel.yaml
+except ImportError:
+    installPackage(RUAMEL_YAML_VERSION)
+
+MARKO_VERSION = "marko==1.0.2"
+try:
+    import marko
+except ImportError:
+    installPackage(MARKO_VERSION)
+
+SETUPTOOLS_VERSION = "setuptools==69.1.0"
+try:
+    import setuptools
+except ImportError:
+    installPackage(SETUPTOOLS_VERSION)
+
+from setuptools import setup, find_packages, Command
+from setuptools.command.build_py import build_py
 from ruamel.yaml import YAML
 from marko.block import Heading, FencedCode, LinkRefDef, BlankLine
 from marko.inline import CodeSpan
@@ -527,9 +550,9 @@ setup(
         "milagro_bls_binding==1.9.0",
         "remerkleable==0.1.27",
         "trie==2.0.2",
-        "ruamel.yaml>=0.17.21",
+        RUAMEL_YAML_VERSION,
         "lru-dict==1.2.0",
-        "marko>=1.0.2",
+        MARKO_VERSION,
         "py_arkworks_bls12381==0.3.4",
         "curdleproofs==0.1.1",
     ]
