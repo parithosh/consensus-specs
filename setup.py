@@ -47,11 +47,17 @@ try:
 except ImportError:
     installPackage(MARKO_VERSION)
 
-SETUPTOOLS_VERSION = "setuptools==69.1.0"
+SETUPTOOLS_VERSION = "setuptools>=69.1.0"
 try:
     import setuptools
 except ImportError:
     installPackage(SETUPTOOLS_VERSION)
+
+PYTEST_VERSION = "pytest>=8.0.0"
+try:
+    import pytest
+except ImportError:
+    installPackage(PYTEST_VERSION)
 
 from setuptools import setup, find_packages, Command
 from setuptools.command.build_py import build_py

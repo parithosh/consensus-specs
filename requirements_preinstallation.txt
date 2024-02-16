@@ -4,3 +4,4 @@ setuptools>=69.1.0
 pylint>=3.0.0
 ruamel.yaml==0.17.21
 marko>=1.0.2
+pytest>=8.0.0
